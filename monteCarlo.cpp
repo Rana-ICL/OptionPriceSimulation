@@ -59,8 +59,8 @@ int main()
     gp << "e\n";
 
     // output the results
-    cout << "Monte Carlo option price: " << optionPrice << endl;
-    cout << "Black-Scholes option price: " << bsPrice << endl;
+    cout << "MS option price: " << optionPrice << endl;
+    cout << "BS option price: " << bsPrice << endl;
 
     return 0;
 }
