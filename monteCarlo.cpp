@@ -3,31 +3,30 @@
 #include <random>
 #include <fstream>
 #include <gnuplot-iostream.h>
-
 using namespace std;
 
-// function to calculate the option price using Black-Scholes formula
-double blackScholes(double S, double K, double r, double sigma, double T)
+// Black-Scholes function
+double BS(double ST, double STR, double RF, double sigma, double T)
 {
-    double d1 = (log(S / K) + (r + sigma * sigma / 2) * T) / (sigma * sqrt(T));
+    double d1 = (log(ST / STR) + (RF + sigma * sigma / 2) * T) / (sigma * sqrt(T));
     double d2 = d1 - sigma * sqrt(T);
     double Nd1 = 0.5 * (1 + erf(d1 / sqrt(2)));
     double Nd2 = 0.5 * (1 + erf(d2 / sqrt(2)));
-    double callPrice = S * Nd1 - K * exp(-r * T) * Nd2;
+    double callPrice = ST * Nd1 - STR * exp(-RF * T) * Nd2;
     return callPrice;
 }
 
 int main()
 {
-    // parameters
-    double S = 100;     // stock price
-    double K = 110;     // strike price
-    double r = 0.05;    // risk-free rate
-    double sigma = 0.2; // volatility
-    double T = 1;       // time to maturity
-    int N = 100000;     // number of simulations
+  
+    double SR = 100;     
+    double STR = 110;    
+    double RF = 0.05;    
+    double sigma = 0.2; 
+    double T = 1;     
+    int N = 500000;     
 
-    // set up random number generator
+    
     random_device rd;
     mt19937 gen(rd());
     normal_distribution<> dist(0, 1);
