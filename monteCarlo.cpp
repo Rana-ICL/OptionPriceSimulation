@@ -1,3 +1,13 @@
+//BS Model vs MS simultion for a call option
+
+// needed libs
+#include <iostream>
+#include <random>
+#include <boost/random/normal_distribution.hpp>
+#include <cmath>
+using namespace std;
+
+
 
 // Cumulative Distribuation Function 
 double NCDF(double value) {
