@@ -1,66 +1,57 @@
-#include <iostream>
-#include <cmath>
-#include <random>
-#include <fstream>
-#include <gnuplot-iostream.h>
-using namespace std;
 
-// Black-Scholes function
-double BS(double ST, double STR, double RF, double sigma, double T)
-{
-    double d1 = (log(ST / STR) + (RF + sigma * sigma / 2) * T) / (sigma * sqrt(T));
-    double d2 = d1 - sigma * sqrt(T);
-    double Nd1 = 0.5 * (1 + erf(d1 / sqrt(2)));
-    double Nd2 = 0.5 * (1 + erf(d2 / sqrt(2)));
-    double callPrice = ST * Nd1 - STR * exp(-RF * T) * Nd2;
-    return callPrice;
+// Cumulative Distribuation Function 
+double NCDF(double value) {
+   return 0.5 * erfc(-value * M_SQRT1_2);
 }
 
-int main()
-{
-  
-    double SR = 100;     
-    double STR = 110;    
-    double RF = 0.05;    
-    double sigma = 0.2; 
-    double T = 1;     
-    int N = 500000;     
 
+
+// MC Simulation for a call option
+double MC_Sim(int sims, double ST, double KT, double r, double v, double T) {
+    mt19937 gen(random_device{});
+    boost::random::normal_distribution<> d(0., 1.);
+
+    double S_adjust = ST * exp(T*(r - 0.5 * v * v));
+    double S_cur = 0.0;
+    double payoff_sum = 0.0;
+
+    for(int i = 0; i < sims; ++i) {
+        double gauss_bm = d(gen);
+        S_cur = S_adjust * exp(sqrt(v * v * T) * gauss_bm);
+        payoff_sum += std::max(S_cur - KT, 0.0);
+    }
+
+    return (payoff_sum / static_cast<double>(sims)) * exp(-r *T);
+}
+
+
+// BS Model for a call option
+double BS_Model(double ST, double KT, double rf_rate, double vol, double t) {
+    double d1 = (log(ST/KT) + (rf_rate + 0.5 * vol * vol) * t) / (vol * sqrt(t));
+    double d2 = d1 - vol * sqrt(t);
     
-    random_device rd;
-    mt19937 gen(rd());
-    normal_distribution<> dist(0, 1);
+    return ST * NCDF(d1) - KT * exp(-rf_rate * t) * NCDF(d2);
+}
 
-    // simulate N paths and calculate the option price for each path
-    vector<double> optionPrices(N);
-    for (int i = 0; i < N; i++)
-    {
-        double St = S * exp((r - sigma * sigma / 2) * T + sigma * sqrt(T) * dist(gen));
-        double payoff = max(St - K, 0.0);
-        double discountedPayoff = payoff * exp(-r * T);
-        optionPrices[i] = discountedPayoff;
-    }
-    double optionPrice = accumulate(optionPrices.begin(), optionPrices.end(), 0.0) / N;
 
-    // calculate the option price using Black-Scholes formula
-    double bsPrice = blackScholes(S, K, r, sigma, T);
 
-    // plot the results using gnuplot and save as PNG
-    Gnuplot gp;
-    gp << "set terminal pngcairo enhanced font 'Verdana,12'\n";
-    gp << "set output 'Monte_Carlo.png'\n";
-    gp << "set xlabel 'Simulations'\n";
-    gp << "set ylabel 'Option Price'\n";
-    gp << "plot '-' with lines title 'Monte Carlo Option Price', " << bsPrice << " with lines title 'Black-Scholes Option Price'\n";
-    for (int i = 0; i < N; i++)
-    {
-        gp << i << " " << accumulate(optionPrices.begin(), optionPrices.begin() + i + 1, 0.0) / (i + 1) << "\n";
-    }
-    gp << "e\n";
+int main() {
+    // Parameters for BS and MC
+    double r_f = 0.05; // risk-free rate
+    double vola = 0.2; // volatitiy
+    double t = 1.0; // time
+    int num_sims = 5000000; // number of simulations
+    double s = 300.0; // Stock price
+    double st_p = 10.0; // strike price
+    
 
-    // output the results
-    cout << "MS option price: " << optionPrice << endl;
-    cout << "BS option price: " << bsPrice << endl;
+    // Calculate prices
+    double MC_call = MC_Sim(num_sims, s, st_p, r_f, vola, t);
+    double BS_call = BS_Model(s, st_p, r_f, vola, t);
+    
+    cout << "Monte Carlo price: " << MC_call << "\n";
+    cout << "Black-Scholes price: " << BS_call << "\n";
+  
 
     return 0;
 }
